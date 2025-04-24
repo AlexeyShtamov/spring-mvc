@@ -15,8 +15,7 @@ import school.sorokin.springboot.springmvcexam.services.UserService;
 
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -32,7 +31,7 @@ class PetControllerTest {
     @Autowired
     private PetService petService;
 
-    private ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
 
     @Test
@@ -124,4 +123,77 @@ class PetControllerTest {
                 .andExpect(result -> assertEquals("No pet with id: 1", result.getResolvedException().getMessage()));
     }
 
+    @Test
+    void shouldSuccessRemovePet() throws Exception {
+        UserDto userDto = new UserDto(null, "Lesha", "lesha@mail.com", 21);
+        userService.creteUser(userDto);
+        PetDto petDto = new PetDto(1L, "Pushok", 1L);
+        petService.createPet(petDto);
+
+        mockMvc.perform(delete("/pets/{id}", petDto.getId()))
+                .andExpect(status().isNoContent());
+
+    }
+
+    @Test
+    void shouldNotSuccessRemovePet() throws Exception {
+        mockMvc.perform(delete("/pets/{id}", 1L))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shouldSuccessUpdatePet() throws Exception {
+        UserDto userDto = new UserDto(null, "Lesha", "lesha@mail.com", 21);
+        userService.creteUser(userDto);
+        PetDto petDto = new PetDto(1L, "Pushok", 1L);
+        petService.createPet(petDto);
+
+        PetDto newPet = new PetDto(null, "Pushok 2.0", 1L);
+        String newPetJson = objectMapper.writeValueAsString(newPet);
+
+        String updatedPetJson = mockMvc.perform(put("/pets/{id}", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(newPetJson))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse().getContentAsString();
+
+        PetDto updatedPet = objectMapper.readValue(updatedPetJson, PetDto.class);
+
+        Assertions.assertNotNull(updatedPet);
+        Assertions.assertEquals(petDto.getId(), updatedPet.getId());
+        Assertions.assertNotEquals(petDto.getName(), updatedPet.getName());
+    }
+
+    @Test
+    void shouldNotSuccessUpdateNonExistPet() throws Exception {
+        UserDto userDto = new UserDto(null, "Lesha", "lesha@mail.com", 21);
+        userService.creteUser(userDto);
+        PetDto petDto = new PetDto(1L, "Pushok", 1L);
+        petService.createPet(petDto);
+
+        PetDto newPet = new PetDto(null, "Pushok 2.0", 1L);
+        String newPetJson = objectMapper.writeValueAsString(newPet);
+
+        mockMvc.perform(put("/pets/{id}", 2L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(newPetJson))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void shouldNotSuccessUpdateNotValidPet() throws Exception {
+        UserDto userDto = new UserDto(null, "Lesha", "lesha@mail.com", 21);
+        userService.creteUser(userDto);
+        PetDto petDto = new PetDto(1L, "Pushok", 1L);
+        petService.createPet(petDto);
+
+        PetDto newPet = new PetDto(null, "", 1L);
+        String newPetJson = objectMapper.writeValueAsString(newPet);
+
+        mockMvc.perform(put("/pets/{id}", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(newPetJson))
+                .andExpect(status().isBadRequest());
+    }
 }

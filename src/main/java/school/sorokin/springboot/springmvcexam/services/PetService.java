@@ -2,6 +2,7 @@ package school.sorokin.springboot.springmvcexam.services;
 
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import school.sorokin.springboot.springmvcexam.controllers.PetController;
 import school.sorokin.springboot.springmvcexam.models.PetDto;
 import school.sorokin.springboot.springmvcexam.models.UserDto;
 
